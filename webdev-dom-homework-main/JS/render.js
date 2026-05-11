@@ -5,7 +5,13 @@ function renderComments() {
   const commentsList = document.getElementById("comments-list");
   
   const commentsHtml = comments.map((comment) => {
-    const likeButtonClass = comment.isLiked ? "like-button -active-like" : "like-button";
+    let likeButtonClass = "like-button";
+    
+    if (comment.isLikeLoading) {
+      likeButtonClass += " -loading-like";
+    } else if (comment.isLiked) {
+      likeButtonClass += " -active-like";
+    }
     
     return `
       <li class="comment" data-id="${comment.id}">
@@ -29,4 +35,4 @@ function renderComments() {
   commentsList.innerHTML = commentsHtml;
 }
 
-export {renderComments};
+export { renderComments };

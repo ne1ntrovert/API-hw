@@ -136,3 +136,41 @@ body {
 .add-form-button:hover {
   opacity: 0.9;
 }
+
+.loader {
+  text-align: center;
+  font-size: 20px;
+  padding: 48px;
+  color: #bcec30;
+}
+
+.sending-loader {
+  text-align: center;
+  font-size: 18px;
+  padding: 20px;
+  color: #bcec30;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Анимация для лайка */
+@keyframes rotating {
+  from {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(30deg);
+  }
+  75% {
+    transform: rotate(-30deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.-loading-like {
+  animation: rotating 0.5s linear infinite;
+}
