@@ -9,3 +9,4 @@ function escapeHtml(text) {
     }
 
 export {escapeHtml};
+
