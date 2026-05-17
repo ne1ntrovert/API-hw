@@ -3,32 +3,42 @@ import { API_URL } from './config.js';
 export let comments = [];
 
 export async function loadComments() {
-  const response = await fetch(API_URL);
+  try {
+    const response = await fetch(API_URL);
 
-  if (!response.ok) {
-    throw new Error(`Ошибка загрузки: ${response.status}`);
+    if (response.status === 500) {
+      throw new Error('Ошибка сервера');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Ошибка загрузки: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    comments = data.comments.map((comment) => ({
+      id: comment.id,
+      name: comment.author.name,
+      date: formatDateFromISO(comment.date),
+      text: comment.text,
+      likes: comment.likes,
+      isLiked: false,
+      isLikeLoading: false,
+    }));
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      throw new Error('Нет интернета');
+    }
+    throw error;
   }
-
-  const data = await response.json();
-
-  comments = data.comments.map((comment) => ({
-    id: comment.id,
-    name: comment.author.name,
-    date: formatDateFromISO(comment.date),
-    text: comment.text,
-    likes: comment.likes,
-    isLiked: false,
-  }));
 }
 
 export function formatDateFromISO(isoString) {
   const date = new Date(isoString);
-
   const day = date.getDate().toString().padStart(2, '0');
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const year = date.getFullYear().toString().slice(-2);
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
-
   return `${day}.${month}.${year} ${hours}:${minutes}`;
 }

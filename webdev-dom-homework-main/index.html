@@ -8,9 +8,12 @@
 
   <body>
     <div class="container">
-      <ul class="comments" id="comments-list">
-      </ul>
-      <div class="add-form">
+      <div id="comments-container">
+        <ul class="comments" id="comments-list"></ul>
+        <div id="comments-loader" class="loader hidden">Загрузка комментариев...</div>
+      </div>
+      
+      <div class="add-form" id="add-form-container">
         <input
           type="text"
           class="add-form-name"
@@ -28,6 +31,7 @@
           <button class="add-form-button" id="add-button">Написать</button>
         </div>
       </div>
+      <div id="sending-loader" class="sending-loader hidden">Комментарий добавляется...</div>
     </div>
 
     <script type="module" src="./JS/index.js"></script>
