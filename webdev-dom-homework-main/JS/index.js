@@ -49,38 +49,74 @@ export function setSendingLoading(isLoading) {
   }
 }
 
-async function addComment(name, text) {
+function validateComment(name, text) {
+  const trimmedName = name.trim();
+  const trimmedText = text.trim();
+  
+  if (trimmedName.length < 3 || trimmedText.length < 3) {
+    alert('Имя и комментарий должны быть не короче 3 символов');
+    return false;
+  }
+  
+  return true;
+}
+
+async function addComment(name, text, forceError = false) {
   const trimmedName = name.trim();
   const trimmedText = text.trim();
 
-  if (trimmedName.length < 3 || trimmedText.length < 3) {
-    alert('Имя и текст должны содержать не менее 3 символов');
-    return false;
+  if (!validateComment(name, text)) {
+    throw new Error('Validation failed');
   }
 
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({
+  try {
+    const body = {
       name: trimmedName,
       text: trimmedText,
-    }),
-  });
+    };
+    
+    if (forceError) {
+      body.forceError = true;
+    }
+    
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
 
-  if (response.status === 400) {
-    const errorData = await response.json();
-    alert(errorData.error);
-    return false;
+    if (response.status === 400) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Ошибка валидации');
+    }
+    
+    if (response.status === 500) {
+      throw new Error('Ошибка сервера');
+    }
+
+    if (!response.ok) {
+      throw new Error('Не удалось добавить комментарий');
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      throw new Error('Нет интернета');
+    }
+    throw error;
   }
+}
 
-  if (!response.ok) {
-    alert('Не удалось добавить комментарий');
-    return false;
+async function addCommentWithRetry(name, text, retryCount = 0) {
+  try {
+    return await addComment(name, text, retryCount > 0);
+  } catch (error) {
+    if (error.message === 'Ошибка сервера' && retryCount < 3) {
+      alert(`Сервер временно недоступен. Повторная попытка ${retryCount + 1} из 3...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return addCommentWithRetry(name, text, retryCount + 1);
+    }
+    throw error;
   }
-
-  await loadComments();
-  renderComments();
-
-  return true;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -96,38 +132,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadComments();
     renderComments();
   } catch (error) {
-    alert(error.message);
+    if (error.message === 'Нет интернета') {
+      alert('Кажется, у вас сломался интернет, попробуйте позже');
+    } else if (error.message === 'Ошибка сервера') {
+      alert('Сервер сломался, попробуй позже');
+    } else {
+      alert(error.message);
+    }
   } finally {
     setCommentsLoading(false);
   }
 
-  addButton.addEventListener('click', async () => {
+  const handleAddComment = async () => {
+    const nameValue = nameInput.value;
+    const commentValue = commentInput.value;
+    
     setSendingLoading(true);
     
-    const success = await addComment(nameInput.value, commentInput.value);
-
-    setSendingLoading(false);
-    
-    if (success) {
+    try {
+      await addCommentWithRetry(nameValue, commentValue);
+      await loadComments();
+      renderComments();
+      
       nameInput.value = '';
       commentInput.value = '';
       nameInput.focus();
+    } catch (error) {
+      if (error.message === 'Validation failed') {
+        return;
+      } else if (error.message === 'Нет интернета') {
+        alert('Кажется, у вас сломался интернет, попробуйте позже');
+      } else if (error.message === 'Ошибка сервера') {
+        alert('Сервер сломался, попробуй позже');
+      } else {
+        alert(error.message || 'Не удалось добавить комментарий');
+      }
+      // Форма НЕ очищается, данные остаются
+    } finally {
+      setSendingLoading(false);
     }
-  });
+  };
+
+  addButton.addEventListener('click', handleAddComment);
 
   commentInput.addEventListener('keydown', async (event) => {
     if (event.ctrlKey && event.key === 'Enter') {
-      setSendingLoading(true);
-      
-      const success = await addComment(nameInput.value, commentInput.value);
-
-      setSendingLoading(false);
-      
-      if (success) {
-        nameInput.value = '';
-        commentInput.value = '';
-        nameInput.focus();
-      }
+      event.preventDefault();
+      await handleAddComment();
     }
   });
 });

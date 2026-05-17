@@ -1,7 +1,6 @@
 import { comments } from './comments.js';
 import { renderComments } from './render.js';
 
-// Функция задержки для симуляции API
 function delay(interval = 300) {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -13,7 +12,6 @@ function delay(interval = 300) {
 function initEventHandlers() {
   const commentsList = document.getElementById("comments-list");
   
-  // Обработчик для ответа на комментарий
   commentsList.addEventListener("click", (event) => {
     if (event.target.classList.contains("like-button")) {
       return;
@@ -34,7 +32,6 @@ function initEventHandlers() {
     }
   });
   
-  // Обработчик лайков с имитацией запроса
   commentsList.addEventListener("click", (event) => {
     const likeButton = event.target.closest(".like-button");
     if (!likeButton) return;
@@ -43,14 +40,11 @@ function initEventHandlers() {
     const comment = comments.find(c => c.id === commentId);
     if (!comment) return;
     
-    // Если лайк уже в процессе загрузки — игнорируем повторный клик
     if (comment.isLikeLoading) return;
     
-    // Устанавливаем флаг загрузки и перерисовываем (появляется анимация)
     comment.isLikeLoading = true;
     renderComments();
     
-    // Симулируем запрос к API через delay
     delay(500)
       .then(() => {
         if (comment.isLiked) {

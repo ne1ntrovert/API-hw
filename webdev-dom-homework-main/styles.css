@@ -155,7 +155,6 @@ body {
   display: none;
 }
 
-/* Анимация для лайка */
 @keyframes rotating {
   from {
     transform: rotate(0deg);

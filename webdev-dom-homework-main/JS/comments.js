@@ -3,23 +3,34 @@ import { API_URL } from './config.js';
 export let comments = [];
 
 export async function loadComments() {
-  const response = await fetch(API_URL);
+  try {
+    const response = await fetch(API_URL);
 
-  if (!response.ok) {
-    throw new Error(`Ошибка загрузки: ${response.status}`);
+    if (response.status === 500) {
+      throw new Error('Ошибка сервера');
+    }
+
+    if (!response.ok) {
+      throw new Error(`Ошибка загрузки: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    comments = data.comments.map((comment) => ({
+      id: comment.id,
+      name: comment.author.name,
+      date: formatDateFromISO(comment.date),
+      text: comment.text,
+      likes: comment.likes,
+      isLiked: false,
+      isLikeLoading: false,
+    }));
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      throw new Error('Нет интернета');
+    }
+    throw error;
   }
-
-  const data = await response.json();
-
-  comments = data.comments.map((comment) => ({
-    id: comment.id,
-    name: comment.author.name,
-    date: formatDateFromISO(comment.date),
-    text: comment.text,
-    likes: comment.likes,
-    isLiked: false,
-    isLikeLoading: false,  // ← новое поле
-  }));
 }
 
 export function formatDateFromISO(isoString) {
