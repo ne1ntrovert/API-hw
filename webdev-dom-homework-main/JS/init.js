@@ -12,8 +12,17 @@ function delay(interval = 300) {
 function initEventHandlers() {
   const commentsList = document.getElementById("comments-list");
   
-  commentsList.addEventListener("click", (event) => {
-    if (event.target.classList.contains("like-button")) {
+  if (!commentsList) {
+    console.error("comments-list not found");
+    return;
+  }
+  
+  const newCommentsList = commentsList.cloneNode(true);
+  commentsList.parentNode.replaceChild(newCommentsList, commentsList);
+  
+  newCommentsList.addEventListener("click", (event) => {
+    
+    if (event.target.closest(".like-button")) {
       return;
     }
     
@@ -26,13 +35,15 @@ function initEventHandlers() {
     if (comment) {
       const replyText = `> ${comment.name}:\n${comment.text}\n\n`;
       const commentInput = document.getElementById("comment-input");
-      commentInput.value = replyText;
-      commentInput.focus();
-      commentInput.scrollIntoView({ behavior: "smooth" });
+      if (commentInput) {
+        commentInput.value = replyText;
+        commentInput.focus();
+        commentInput.scrollIntoView({ behavior: "smooth" });
+      }
     }
   });
   
-  commentsList.addEventListener("click", (event) => {
+  newCommentsList.addEventListener("click", (event) => {
     const likeButton = event.target.closest(".like-button");
     if (!likeButton) return;
     
@@ -45,6 +56,7 @@ function initEventHandlers() {
     comment.isLikeLoading = true;
     renderComments();
     
+    // Симулируем запрос к API через delay
     delay(500)
       .then(() => {
         if (comment.isLiked) {
@@ -55,11 +67,14 @@ function initEventHandlers() {
         comment.isLiked = !comment.isLiked;
         comment.isLikeLoading = false;
         renderComments();
+        
+        initEventHandlers();
       })
       .catch(() => {
         comment.isLikeLoading = false;
         renderComments();
         alert('Не удалось поставить лайк');
+        initEventHandlers();
       });
   });
 }

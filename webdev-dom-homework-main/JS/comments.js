@@ -1,4 +1,5 @@
 import { API_URL } from './config.js';
+import { getToken } from './auth.js';
 
 export let comments = [];
 
@@ -22,7 +23,7 @@ export async function loadComments() {
       date: formatDateFromISO(comment.date),
       text: comment.text,
       likes: comment.likes,
-      isLiked: false,
+      isLiked: comment.isLiked || false,
       isLikeLoading: false,
     }));
   } catch (error) {
@@ -31,6 +32,49 @@ export async function loadComments() {
     }
     throw error;
   }
+}
+
+export async function addCommentToAPI(text, forceError = false) {
+  const token = getToken();
+  
+  const body = {
+    text: text.trim(),
+  };
+  
+  if (forceError) {
+    body.forceError = true;
+  }
+  
+  const headers = {};
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify(body),
+  });
+
+  if (response.status === 401) {
+    throw new Error('Не авторизован');
+  }
+
+  if (response.status === 400) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Ошибка валидации');
+  }
+  
+  if (response.status === 500) {
+    throw new Error('Ошибка сервера');
+  }
+
+  if (!response.ok) {
+    throw new Error('Не удалось добавить комментарий');
+  }
+
+  return await response.json();
 }
 
 export function formatDateFromISO(isoString) {

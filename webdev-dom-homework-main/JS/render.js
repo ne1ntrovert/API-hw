@@ -4,6 +4,8 @@ import { comments } from './comments.js';
 function renderComments() {
   const commentsList = document.getElementById("comments-list");
   
+  if (!commentsList) return;
+  
   const commentsHtml = comments.map((comment) => {
     let likeButtonClass = "like-button";
     
